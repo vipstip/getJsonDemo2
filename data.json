@@ -1,0 +1,49 @@
+{
+  "title": "Data for dashboard",
+  "datas": [
+    {
+      "type": "view",
+      "data": [
+        {
+          "name": "Chè xoài hoa đậu biếc",
+          "ListNameTag": [
+            "Món Việt",
+            "Ngày thường",
+            "Cho trẻ em"
+          ]
+        },
+        {
+          "name": "Bánh Bò Dừa Nướng Bằng Chảo",
+          "ListNameTag": [
+            "Món Việt",
+            "Ngày thường",
+            "Cho trẻ em",
+            "Quay - Nướng"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "time",
+      "data": [
+        {
+          "name": "Chè xoài hoa đậu biếc",
+          "ListNameTag": [
+            "Món Việt",
+            "Ngày thường",
+            "Cho trẻ em"
+          ]
+        },
+        {
+          "name": "Bánh Bò Dừa Nướng Bằng Chảo",
+          "ListNameTag": [
+            "Món Việt",
+            "Ngày thường",
+            "Cho trẻ em",
+            "Quay - Nướng"
+          ]
+        }
+      ]
+    }
+  ]
+}

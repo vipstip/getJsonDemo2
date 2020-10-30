@@ -18,12 +18,14 @@ type TagData struct {
 	ListNameTag []string
 }
 
+type TypeData struct {
+	Type        string
+	ListTagData []TagData
+}
+
 type JsonResult struct {
-	Name string
-	Des  string
-	Time int
-	View int
-	Vote int
+	Title string
+	Datas []TypeData
 }
 
 var Name = "name"
@@ -31,6 +33,11 @@ var Des = "des"
 var Time = "time"
 var View = "view"
 var Vote = "vote"
+var db *gorm.DB
+
+func init() {
+	db, _ = ConnectDB()
+}
 
 func ConnectDB() (*gorm.DB, error) {
 	dbUser := "root"
@@ -48,123 +55,130 @@ func ConnectDB() (*gorm.DB, error) {
 
 func GetJson() []byte {
 	defer duration(track("GetJSon"))
-
-	db, _ := ConnectDB()
-	channel := make(chan map[string][]TagData, 5)
+	channel := make(chan TypeData, 5)
 	//Put data channel
 	for i := 0; i < 5; i++ {
-		go handlerJson(i, channel, db)
+		go handlerJson(i, channel)
 	}
 
 	//Get data from channel
 
-	var arrObject = make([]map[string][]TagData, 5)
+	var arrObject = make([]TypeData, 5)
 	for i, _ := range arrObject {
 		arrObject[i] = <-channel
 	}
 
+	var jsonResult JsonResult
+	jsonResult.Title = "Get Data From Json"
+	jsonResult.Datas = arrObject
+
 	var b []byte
-	b, _ = json.Marshal(arrObject)
+	b, _ = json.Marshal(jsonResult)
 
 	return b
 }
 
-func handlerJson(stt int, channel chan map[string][]TagData, db *gorm.DB) {
+func handlerJson(stt int, channel chan TypeData) {
 	switch stt {
 	case 0:
-		myMap := make(map[string][]TagData)
-		tagDatas, key := GetArrName(db)
-		myMap[key] = tagDatas
-		channel <- myMap
+		tagDatas, types := GetArrName()
+		var typeData TypeData
+		typeData.Type = types
+		typeData.ListTagData = tagDatas
+		channel <- typeData
 	case 1:
-		myMap := make(map[string][]TagData)
-		tagDatas, key := GetArrDes(db)
-		myMap[key] = tagDatas
-		channel <- myMap
+		tagDatas, types := GetArrDes()
+		var typeData TypeData
+		typeData.Type = types
+		typeData.ListTagData = tagDatas
+		channel <- typeData
 	case 2:
-		myMap := make(map[string][]TagData)
-		tagDatas, key := GetArrTime(db)
-		myMap[key] = tagDatas
-		channel <- myMap
+		tagDatas, types := GetArrTime()
+		var typeData TypeData
+		typeData.Type = types
+		typeData.ListTagData = tagDatas
+		channel <- typeData
 	case 3:
-		myMap := make(map[string][]TagData)
-		tagDatas, key := GetArrView(db)
-		myMap[key] = tagDatas
-		channel <- myMap
+		tagDatas, types := GetArrView()
+		var typeData TypeData
+		typeData.Type = types
+		typeData.ListTagData = tagDatas
+		channel <- typeData
 	case 4:
-		myMap := make(map[string][]TagData)
-		tagDatas, key := GetArrVote(db)
-		myMap[key] = tagDatas
-		channel <- myMap
+		tagDatas, types := GetArrVote()
+		var typeData TypeData
+		typeData.Type = types
+		typeData.ListTagData = tagDatas
+		channel <- typeData
 	}
 }
 
-func GetArrName(db *gorm.DB) ([]TagData, string) {
+func GetArrName() ([]TagData, string) {
 	defer duration(track("GetArrName"))
 	var data []Data
 	db.Raw("SELECT id , name  FROM `recipes` WHERE `name` LIKE '%ga%' ORDER BY Rand() LIMIT 0,5").Scan(&data)
-	tagDatas := getTagDatas(data, db)
+	tagDatas := getTagDatas(data)
 	return tagDatas, Name
 }
 
-func GetArrDes(db *gorm.DB) ([]TagData, string) {
+func GetArrDes() ([]TagData, string) {
 	defer duration(track("GetArrDes"))
 
 	var data []Data
 	db.Raw("SELECT id,name  FROM recipes WHERE description LIKE '%bánh%' ORDER BY Rand() LIMIT 0,5").Scan(&data)
-	tagDatas := getTagDatas(data, db)
+	tagDatas := getTagDatas(data)
 	return tagDatas, Des
 }
 
-func GetArrTime(db *gorm.DB) ([]TagData, string) {
+func GetArrTime() ([]TagData, string) {
 	defer duration(track("GetArrTime"))
 	var data []Data
 	db.Raw("SELECT id,name  FROM recipes WHERE execution_time>60 AND execution_time<100 ORDER BY Rand() LIMIT 0,5").Scan(&data)
-	tagDatas := getTagDatas(data, db)
+	tagDatas := getTagDatas(data)
 	return tagDatas, Time
 }
 
-func GetArrView(db *gorm.DB) ([]TagData, string) {
+func GetArrView() ([]TagData, string) {
 	defer duration(track("GetArrView"))
 
 	var data []Data
 	db.Raw("SELECT id,name  FROM recipes WHERE view>1000 ORDER BY Rand() LIMIT 0,5").Scan(&data)
-	tagDatas := getTagDatas(data, db)
+	tagDatas := getTagDatas(data)
 	return tagDatas, View
 }
 
-func GetArrVote(db *gorm.DB) ([]TagData, string) {
+func GetArrVote() ([]TagData, string) {
 	defer duration(track("GetArrVote"))
 
 	var data []Data
 	db.Raw("SELECT id,name  FROM recipes WHERE vote>1000 ORDER BY Rand() LIMIT 0,5").Scan(&data)
 
-	tagDatas := getTagDatas(data, db)
+	tagDatas := getTagDatas(data)
 	return tagDatas, Vote
 }
 
-func GetArrTag(idTag int, db *gorm.DB) []string {
+func GetArrTag(idTag int) []string {
 	var listTag []string
 	db.Table("tag").Select("tag.name").Joins("INNER JOIN relationship ON tag.id = relationship.tag_id INNER JOIN recipes ON recipes.id = relationship.recipes_id").Where("recipes.id = ?", idTag).Scan(&listTag)
 	//db.Raw("SELECT tag.name FROM tag INNER JOIN relationship ON tag.id = relationship.tag_id INNER JOIN recipes ON recipes.id = relationship.recipes_id WHERE recipes.id = ?",idTag).Find(&listTag)
 	return listTag
 }
 
-func handlerTag(idTag int, channel chan TagData, nameTagData string, db *gorm.DB) {
-	listTag := GetArrTag(idTag, db)
+func handlerTag(idTag int, channel chan TagData, nameTagData string) {
+	listTag := GetArrTag(idTag)
 	var tagData TagData
 	tagData.Name = nameTagData
 	tagData.ListNameTag = listTag
 	channel <- tagData
 }
 
-func getTagDatas(data []Data, db *gorm.DB) []TagData {
+func getTagDatas(data []Data) []TagData {
 
 	totalGetTag := len(data)
 	channel := make(chan TagData, totalGetTag)
 	//Put data channel
 	for i := 0; i < totalGetTag; i++ {
-		go handlerTag(data[i].Id, channel, data[i].Name, db)
+		go handlerTag(data[i].Id, channel, data[i].Name)
 	}
 
 	//Get data from channel
